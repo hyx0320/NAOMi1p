@@ -340,7 +340,15 @@ for j = 1:N_neur
         allpaths{i} = path;
         if ~isempty(path)
             dendSz = max(0, 1 + dendVar * randn)^2;
-            pathW = dendSz*single(1-(1-1/sqrt(2))*[0;sum(abs(diff(abs(diff(path)))),2)/2;0]);
+            % [FIX] 路径只有 1 个节点时，下一行的公式得到长度 2 的 pathW，
+            %       而 L345 的 unique(idx) 返回的 ic 长度是 1 →
+            %       accumarray 报"第二个输入必须为向量"。顶树突那段（下方 L360-365）
+            %       已有同样的守卫，基树突这段缺失，此处补齐。
+            if size(path,1) > 2
+                pathW = dendSz*single(1-(1-1/sqrt(2))*[0;sum(abs(diff(abs(diff(path)))),2)/2;0]);
+            else
+                pathW = dendSz*single(ones(size(path,1),1));   % 单点/两点路径：权重退化为常数
+            end
             idx = sub2ind(fdims,path(:,1),path(:,2),path(:,3));
             [unique_idx, ~, ic] = unique(idx);
             sum_vals = accumarray(ic, pathW);

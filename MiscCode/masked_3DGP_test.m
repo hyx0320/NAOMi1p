@@ -82,14 +82,14 @@ if nargout > 1
     varargout{1} = gp_tmp;
 end
 
-sprev = rng;
-rng('shuffle','simdTwister');
+% [FIX] 原为：sprev = rng;  rng('shuffle','simdTwister');  ...  rng(sprev);
+%       按系统时间重播种再恢复状态 → 不可复现；现在直接消耗当前全局随机流。
 for i = 1:size(gp_tmp,3)
   gp_tmp(:,:,i) = (randn(grid_sz(1:2),type)+1j*randn(grid_sz(1:2),type)).*gp_tmp(:,:,i);
 end
 % gp_tmp = exp(1j*2*pi*rand(grid_sz,type)).*gp_tmp;
 % gp_tmp = single(sqrt(chi2rnd(2,grid_sz)).*gp_tmp);
-rng(sprev);
+% [FIX] 原 rng(sprev); 已移除（否则随机流被复位，每次调用拿到相同的随机数）
 
 gp_tmp = 2*p_scale*bin_mask.*sqrt(numel(gp_tmp))*real(ifftshift(ifftn(ifftshift(gp_tmp))))+mu; % Move random process back to the spatial domain
 

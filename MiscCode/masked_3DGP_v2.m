@@ -66,20 +66,18 @@ for i = 1:size(l_scale,1)
     ker_loc = (ker_1(:)>threshold);
     ker_len = sum(ker_loc);
     if(ker_len<prod(grid_sz)/2)
-        sprev = rng;
-        rng('shuffle','simdTwister');
+        % [FIX] 原为：sprev = rng;  rng('shuffle','simdTwister');  ...  rng(sprev);
+        %       按系统时间重播种再恢复状态，导致同参数两次运行结果不同（不可复现）。
+        %       现在直接消耗当前全局随机流，配合主脚本的 rng(seed) 即可完全复现。
         TMP = randn([ker_len 1],'single')+1j*randn([ker_len 1],'single');  % First make a random array
         TMP = (l_weights(i)*sqrt(prod(l_scale(i,:))))*TMP.*ker_1(ker_loc);
-        rng(sprev);
         gp_vals(ker_loc) = gp_vals(ker_loc)+TMP;                           % Multiply with a kernel (Frequency-domain filtering) 
         clear TMP ker_loc
     else
         clear ker_loc
-        sprev = rng;
-        rng('shuffle','simdTwister');
+        % [FIX] 同上：移除按时间重播种与状态恢复，改为消耗当前随机流
         TMP = randn(grid_sz,'single')+1j*randn(grid_sz,'single');          % First make a random array
         TMP = (l_weights(i)*sqrt(prod(l_scale(i,:))))*TMP.*ker_1;
-        rng(sprev);
         gp_vals = gp_vals+TMP;                                             % Multiply with a kernel (Frequency-domain filtering) 
         clear TMP
     end
