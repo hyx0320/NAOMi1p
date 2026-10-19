@@ -328,13 +328,15 @@ end
 % disable apical dendrites
 dend_act(vol_params.N_neur + 1 : vol_params.N_neur + vol_params.N_den, :) = 0;
 % statistics
-max(soma_act(:))
-max(bg_act(:))
-max(dend_act(:))
+% [FIX] 下面 6 条是原版遗留的调试语句，缺分号 → 每次扫描都打印 6 个 "ans = single"，
+%       污染日志。补上分号，行为不变（这些值本来就没被使用）。
+max(soma_act(:));
+max(bg_act(:));
+max(dend_act(:));
 
-max(std(soma_act, 0, 2))
-max(std(dend_act, 0, 2))
-max(std(bg_act, 0, 2))
+max(std(soma_act, 0, 2));
+max(std(dend_act, 0, 2));
+max(std(bg_act, 0, 2));
 
 %%
 
@@ -460,7 +462,11 @@ if ~isstruct(PSF)
         if vessel_mod.flag
             vessel_img = vessel_dilation(valid_vessel, vessel_mod.FOV_N, vessel_mod.seed, vessel_mod.max_dilate_amp, dilate_trace, kk);
         else
-            vessel_img = ones(size(WMPvol_w_bg(:, :, z_loc:(z_loc+Np3-1))));
+            % [FIX] 原为 ones(size(WMPvol_w_bg(:,:,z_loc:(z_loc+Np3-1))))，
+            %       但 WMPvol_w_bg 直到下面第 467 行才被创建 →
+            %       vessel_mod.flag=false 时必然报 "WMPvol_w_bg 无法识别"。
+            %       这里直接按已知维度构造，与原意（不膨胀 → 衰减因子恒为 1）一致。
+            vessel_img = ones(N1, N2, Np3, 'single');
         end
         
         %% add volumes
